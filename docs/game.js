@@ -1,3 +1,7 @@
+console.log("tg.initData:", tg.initData); // raw string Telegram sends
+console.log("tg.initDataUnsafe:", tg.initDataUnsafe); // parsed object
+console.log("tg.initDataUnsafe.user:", tg.initDataUnsafe?.user);
+
 // JavaScript implementation of the Python classes
 class LetterState {
     constructor(character) {
@@ -234,7 +238,7 @@ function submitGuess() {
     } else if (!game.can_attempt) {
 
         console.log("Game is failed; entering else block")
-        
+
         finalScore = 0; // No score if failed
         showMessage(`Game Over! The word was: ${game.secret}`, 'error');
         gameOver = true;
