@@ -179,6 +179,8 @@ function animateTiles(row, result) {
 
 // Submit guess
 function submitGuess() {
+    console.log("submitGuess called", currentGuess);
+
     const guess = currentGuess.toUpperCase().trim();
 
     if (guess.length !== 5) {
@@ -205,13 +207,22 @@ function submitGuess() {
     updateKeyboard(result);
     updateStats();
 
+    console.log("Evaluating endgame conditions");
+    console.log("is_solved:", game.is_solved);
+    console.log("can_attempt:", game.can_attempt);
+    console.log("attempts:", game.attempts);
+    console.log("secret:", game.secret);
+
     if (game.is_solved) {
+        console.log("Game is solved; entering if statement")
+
         finalScore = game.attempts.length; // Store the final score
         showMessage(`Congratulations! You solved it in ${game.attempts.length} attempts!`, 'success');
         gameOver = true;
         
         // Send score to parent bot (if running in Telegram)
         if (tg.initDataUnsafe?.user) {
+            console.log("Sending data to Telegram:", tg.initDataUnsafe?.user);
             tg.sendData(JSON.stringify({
                 action: 'game_completed',
                 score: finalScore,
@@ -221,12 +232,16 @@ function submitGuess() {
             }));
         }
     } else if (!game.can_attempt) {
+
+        console.log("Game is failed; entering else block")
+        
         finalScore = 0; // No score if failed
         showMessage(`Game Over! The word was: ${game.secret}`, 'error');
         gameOver = true;
         
         // Send failure to parent bot (if running in Telegram)
         if (tg.initDataUnsafe?.user) {
+            console.log("Sending data to Telegram:", tg.initDataUnsafe?.user);
             tg.sendData(JSON.stringify({
                 action: 'game_completed',
                 score: finalScore,
