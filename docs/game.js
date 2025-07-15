@@ -89,10 +89,6 @@ const WORD_LIST = [
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-console.log("tg.initData:", tg.initData); // raw string Telegram sends
-console.log("tg.initDataUnsafe:", tg.initDataUnsafe); // parsed object
-console.log("tg.initDataUnsafe.user:", tg.initDataUnsafe?.user);
-
 // DOM elements
 const gameBoard = document.getElementById('gameBoard');
 const keyboard = document.getElementById('keyboard');
@@ -225,16 +221,13 @@ function submitGuess() {
         gameOver = true;
         
         // Send score to parent bot (if running in Telegram)
-        if (tg.initDataUnsafe?.user) {
-            console.log("Sending data to Telegram:", tg.initDataUnsafe?.user);
-            tg.sendData(JSON.stringify({
-                action: 'game_completed',
-                score: finalScore,
-                attempts: game.attempts.length,
-                secret_word: game.secret,
-                user_id: tg.initDataUnsafe.user.id
-            }));
-        }
+        console.log("Sending game data back to bot");
+        tg.sendData(JSON.stringify({
+            action: 'game_completed',
+            score: finalScore,
+            attempts: game.attempts.length,
+            secret_word: game.secret
+        }));
     } else if (!game.can_attempt) {
 
         console.log("Game is failed; entering else block")
@@ -244,17 +237,14 @@ function submitGuess() {
         gameOver = true;
         
         // Send failure to parent bot (if running in Telegram)
-        if (tg.initDataUnsafe?.user) {
-            console.log("Sending data to Telegram:", tg.initDataUnsafe?.user);
-            tg.sendData(JSON.stringify({
-                action: 'game_completed',
-                score: finalScore,
-                attempts: game.attempts.length,
-                secret_word: game.secret,
-                user_id: tg.initDataUnsafe.user.id,
-                failed: true
-            }));
-        }
+        console.log("Sending game data back to bot");
+        tg.sendData(JSON.stringify({
+            action: 'game_completed',
+            score: finalScore,
+            attempts: game.attempts.length,
+            secret_word: game.secret,
+            failed : true
+        }));
     }
     // Move to next row
     currentRow++;
