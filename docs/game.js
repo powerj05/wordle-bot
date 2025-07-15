@@ -248,7 +248,7 @@ function handleKeyPress(key) {
 
     if (key === 'enter' && currentGuess.length === 5) {
         submitGuess();
-    } else if (key === 'Backspace') {
+    } else if (key === 'backspace') {
         if (currentGuess.length > 0) {
             currentGuess = currentGuess.slice(0, -1);
             const tile = document.getElementById(`tile-${currentRow}-${currentGuess.length}`);
@@ -279,7 +279,7 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
         e.preventDefault();
         submitGuess();
-    } else if (e.key === 'Backspace') {
+    } else if (e.key === 'backspace') {
         handleKeyPress(e.key)
         return;
     } else if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) {
