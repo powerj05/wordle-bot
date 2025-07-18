@@ -99,6 +99,10 @@ const remainingAttempts = document.getElementById('remainingAttempts');
 // Initialize game
 function initGame() {
     const randomWord = WORD_LIST[Math.floor(Math.random() * WORD_LIST.length)];
+    /*Fetch answers list
+    Fetch legal guesses list
+    selectword() */
+
     game = new Wordle(randomWord);
     currentRow = 0;
     currentGuess = '';
