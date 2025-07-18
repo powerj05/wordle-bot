@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # --- Setup ---
-cd /home/johnp/telegram_bots/telegram_wordle_bot
+cd /home/johnp/telegram_bots/wordle-bot
 source venv/bin/activate
 
 # Try to retrieve ngrok public URL from local API
