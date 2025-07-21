@@ -4,6 +4,7 @@ from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, WebAppInfo
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 import json
 import sys
+from dotenv import load_dotenv
 
 logging.basicConfig(
     level=logging.INFO,
@@ -13,8 +14,9 @@ logging.basicConfig(
     ]
 )
 
-BOT_USERNAME = "@jpaddy_bot"
-BOT_TOKEN = '7137871448:AAGF5aNYGX6ghxTSHEHDLruGKiEsKPDMMlw'
+load_dotenv()
+BOT_USERNAME = os.environ.get("BOT_USERNAME")
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 WEBHOOK_URL = os.environ.get("NGROK_URL")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
