@@ -18,6 +18,7 @@ load_dotenv()
 BOT_USERNAME = os.environ.get("BOT_USERNAME")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 WEBHOOK_URL = os.environ.get("NGROK_URL")
+WEBAPP_URL = os.environ.get("WEBAPP_URL")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logging.info(f"Received /start from user {update.effective_user.id}")
@@ -25,7 +26,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def play(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logging.info(f"Received /play from user {update.effective_user.id}")
-    webapp = WebAppInfo(url="https://powerj05.github.io/wordle-bot/")
+    webapp = WebAppInfo(url=WEBAPP_URL)
     keyboard = ReplyKeyboardMarkup(
         [[KeyboardButton("Play Wordle", web_app=webapp)]],
         resize_keyboard=True,
