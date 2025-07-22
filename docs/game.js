@@ -333,23 +333,25 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch("allowed_words.txt").then(res => res.text()),
         fetch("possible_words.txt").then(res => res.text())
     ]).then(([allowedText, possibleText]) => {
+        console.log("Reading in allowed word list")
         allowedWords = allowedText
             .split('\n')
             .map(w => w.trim().toUpperCase())
             .filter(w => w.length === 5);
 
+        console.log("Reading in possible word list")
         const possibleWords = possibleText
             .split('\n')
             .map(w => w.trim().toUpperCase())
             .filter(w => w.length === 5);
 
+        console.log("Shuffling possible words")
         const shuffled = getShuffledWordList(possibleWords);
         const index = getTodayIndex();
         secretWord = shuffled[index % shuffled.length];
 
-        // Initialize the game with the selected word
         console.log("Today's word:", secretWord);  // comment this out in production
-        initGame(secretWord);  // your existing function
+        initGame(secretWord);
     }).catch(err => {
         console.error("Error loading word lists:", err);
     });
