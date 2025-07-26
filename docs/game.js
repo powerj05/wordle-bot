@@ -70,6 +70,33 @@ class Wordle {
     }
 }
 
+function getSeededRandom(seed) {
+    let h = 0;
+    for (let i = 0; i < seed.length; i++) {
+        h = (31 * h + seed.charCodeAt(i)) >>> 0;
+    }
+    return () => {
+        h = (h * 1664525 + 1013904223) % 4294967296;
+        return h / 4294967296;
+    };
+}
+
+function getShuffledWordList(words, seed = "Wordle2025") {
+    const rng = getSeededRandom(seed);
+    const shuffled = [...words];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
+function getTodayIndex(startDate = "2025-07-15") {
+    const base = new Date(startDate);
+    const today = new Date();
+    return Math.floor((today - base) / (1000 * 60 * 60 * 24));
+}
+
 // Game state
 let game;
 let currentRow = 0;
@@ -78,12 +105,8 @@ let gameOver = false;
 let finalScore = null; // This will store the final score
 
 // Common 5-letter words for the game
-const WORD_LIST = [
-    'APPLE', 'BREAD', 'CHAIR', 'DREAM', 'EAGLE', 'FLOUR', 'GHOST', 'HOUSE', 'IMAGE', 'JOKES',
-    'KNIFE', 'LEMON', 'MUSIC', 'NURSE', 'OCEAN', 'PAPER', 'QUEEN', 'RADIO', 'STONE', 'TABLE',
-    'WATER', 'WORLD', 'YOUTH', 'ZEBRA', 'BASIC', 'CLEAN', 'DRIVE', 'EARLY', 'FRESH', 'GREAT',
-    'HAPPY', 'LIGHT', 'MONEY', 'NIGHT', 'PEACE', 'QUIET', 'RIGHT', 'SMART', 'TODAY', 'WATCH'
-];
+let allowedWords = [];
+let secretWord = "";
 
 // Initialize Telegram Web App
 const tg = window.Telegram.WebApp;
@@ -97,13 +120,12 @@ const attemptCount = document.getElementById('attemptCount');
 const remainingAttempts = document.getElementById('remainingAttempts');
 
 // Initialize game
-function initGame() {
-    const randomWord = WORD_LIST[Math.floor(Math.random() * WORD_LIST.length)];
+function initGame(secret) {
     /*Fetch answers list
     Fetch legal guesses list
     selectword() */
 
-    game = new Wordle(randomWord);
+    game = new Wordle(secret);
     currentRow = 0;
     currentGuess = '';
     gameOver = false;
@@ -186,6 +208,11 @@ function submitGuess() {
     console.log("submitGuess called", currentGuess);
 
     const guess = currentGuess.toUpperCase().trim();
+
+    if (!allowedWords.includes(currentGuess)) {
+        showMessage("Not a valid word", "error");
+        return;
+    }
 
     if (guess.length !== 5) {
         showMessage('Word must be 5 letters!', 'error');
@@ -302,5 +329,30 @@ document.addEventListener('keydown', (e) => {
 
 // Initialize game when page loads
 document.addEventListener('DOMContentLoaded', () => {
-    initGame();
+    Promise.all([
+        fetch("allowed_words.txt").then(res => res.text()),
+        fetch("possible_words.txt").then(res => res.text())
+    ]).then(([allowedText, possibleText]) => {
+        console.log("Reading in allowed word list")
+        allowedWords = allowedText
+            .split('\n')
+            .map(w => w.trim().toUpperCase())
+            .filter(w => w.length === 5);
+
+        console.log("Reading in possible word list")
+        const possibleWords = possibleText
+            .split('\n')
+            .map(w => w.trim().toUpperCase())
+            .filter(w => w.length === 5);
+
+        console.log("Shuffling possible words")
+        const shuffled = getShuffledWordList(possibleWords);
+        const index = getTodayIndex();
+        secretWord = shuffled[index % shuffled.length];
+
+        console.log("Today's word:", secretWord);  // comment this out in production
+        initGame(secretWord);
+    }).catch(err => {
+        console.error("Error loading word lists:", err);
+    });
 })
