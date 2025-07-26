@@ -5,6 +5,9 @@ from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandl
 import json
 import sys
 from dotenv import load_dotenv
+from boto3 import resource
+from boto3.dynamodb.conditions import Attr, Key
+from datetime import datetime
 
 logging.basicConfig(
     level=logging.INFO,
@@ -81,6 +84,37 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     logging.info(f"Bot: {response}")
     await update.message.reply_text(response)
+
+async def createtournament(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # ask user how many days
+    # create new entry in tournament table:
+    # tournament_id = chat_id#datetime.now()
+    # chat_id = chat_id
+    # start_date = datetime.now()
+    # end_date = datetime.now() + no. days to run
+    # participants = all users in group chat
+    
+    return
+
+async def join(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # if in group chat and tournament exists for group chat
+    # add user to participants
+
+    return
+
+async def leave(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # if in group chat and tournament exists for group chat
+    # remove user from participants
+
+    return
+
+async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # if in group chat and tournament exists for group chat
+    # for user in participants:
+    # get scores from WordleScores table where date in range
+    # add most recent score to one list and average score for tournament to other list.
+
+    return
 
 def main():
     application = Application.builder().token(BOT_TOKEN).build()
