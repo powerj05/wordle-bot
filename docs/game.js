@@ -103,8 +103,6 @@ let currentRow = 0;
 let currentGuess = '';
 let gameOver = false;
 let finalScore = null; // This will store the final score
-
-// Common 5-letter words for the game
 let allowedWords = [];
 let secretWord = "";
 
