@@ -261,7 +261,7 @@ function submitGuess() {
 
         console.log("Game is failed; entering else block")
 
-        finalScore = 0; // No score if failed
+        finalScore = 7; // No score if failed
         showMessage(`Game Over! The word was: ${game.secret}`, 'error');
         gameOver = true;
         
