@@ -287,12 +287,92 @@ async def leave(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # if in group chat and tournament exists for group chat
-    # for user in participants:
-    # get scores from WordleScores table where date in range
-    # add most recent score to one list and average score for tournament to other list.
+    chat = update.effective_chat
+    chat_id = str(chat.id)
 
-    return
+    if chat.type not in ['group','supergroup']:
+        await update.message.reply_text(
+            "Must be in a group chat to use this command.",
+            reply_to_message_id=update.message.message_id
+        )
+        return
+
+    try:
+        response = tournaments_table.get_item(Key={'chat_id':chat_id})
+        item = response.get('Item')
+        if not item:
+            await update.message.reply_text(
+                "No active tournament found for this group chat. Use /createtournament to create one.",
+                reply_to_message_id=update.message.message_id
+            )
+            return
+        
+        start_date = item['start_date']
+        end_date = item['end_date']
+        participants = item['participants']
+        timediff = date.today()-date.fromisoformat(start_date)
+        days_running = timediff.days+1
+        leaderboard = []
+
+        if start_date > date.today().isoformat():
+            await update.message.reply_text(f"Tournament does not start until {start_date}.")
+            return
+
+        for p in participants:
+            disp_name = await get_display_name(context.bot,chat_id,p)
+
+            # Fetch today's score
+            logging.info(f"Fetching today's score for user {p}.")
+            td_score_resp = scores_table.query(
+                KeyConditionExpression=Key('user_id').eq(str(p)) &
+                                           Key('date').eq(date.today().isoformat()),
+            )
+            td_score_item = td_score_resp.get('Items', [])
+            td_score = td_score_item[0].get('score') if td_score_item else 'NYP'
+            logging.info(f"user {p}'s score for today: {td_score}")
+
+            total_score=0
+            days_played = 0
+
+            logging.info(f"Fetching all scores for user {p}.")
+            score_resp = scores_table.query(
+            KeyConditionExpression=Key('user_id').eq(str(p)) &
+                                    Key('date').between(start_date, end_date)
+            )
+            logging.info(f"Fetched scores for user {p}")
+            for s in score_resp.get('Items',[]):
+                score = s.get('score')
+                days_played += 1
+                total_score += int(score)
+            total_score += 7*(days_running-days_played) # give users a score of 7 for days they didn't play
+            
+            avg_score = total_score/days_running
+            leaderboard.append((disp_name,td_score,avg_score))
+        
+        leaderboard.sort(key=lambda x:x[2])
+
+        msg = f"Leaderboard for tournament at {date.today().isoformat()} (today's scores shown in brackets):\n\n"
+        for rank, (name, tdscore,avg) in enumerate(leaderboard, start=1):
+            msg += f"{rank}. {name}: {avg:.2f} ({tdscore})\n"
+
+        await update.message.reply_text(msg, reply_to_message_id=update.message.message_id)
+
+    except Exception as e:
+        logging.error(f"Error fetching leaderboard for tournament for chat {chat_id}: {e}")
+        await update.message.reply_text(
+            "⚠️ An error occurred while trying to fetch the leaderboard.",
+            reply_to_message_id=update.message.message_id
+        )
+
+async def get_display_name(bot, chat_id, user_id):
+    try:
+        member = await bot.get_chat_member(chat_id, user_id)
+        if member.user.username:
+            return f"@{member.user.username}"
+        else:
+            return member.user.first_name
+    except:
+        return f"User {user_id}"
 
 def main():
     application = Application.builder().token(BOT_TOKEN).build()
@@ -301,6 +381,7 @@ def main():
     application.add_handler(CommandHandler("play",play))
     application.add_handler(CommandHandler("join",join))
     application.add_handler(CommandHandler("leave",leave))
+    application.add_handler(CommandHandler("leaderboard",leaderboard))
     application.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp_data))
     # application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
