@@ -100,17 +100,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logging.info(f"Bot: {response}")
     await update.message.reply_text(response)
 
-async def createtournament(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # ask user how many days
-    # create new entry in tournament table:
-    # tournament_id = chat_id#datetime.now()
-    # chat_id = chat_id
-    # start_date = datetime.now()
-    # end_date = datetime.now() + no. days to run
-    # participants = all users in group chat
-    
-    return
-
 ASK_START_DATE, ASK_DAYS = range(2)
 
 # Entry point: ask for start date
@@ -170,17 +159,14 @@ async def receive_days(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat = update.effective_chat
     start_date = context.chat_data['start_date']
     end_date = start_date + timedelta(days=days - 1)
-    tournament_id = f"{chat.id}#{start_date.isoformat()}"
 
     # Save to DynamoDB
     tournaments_table.put_item(Item={
-        'tournament_id': tournament_id,
         'chat_id': str(chat.id),
         'start_date': start_date.isoformat(),
         'end_date': end_date.isoformat(),
         'participants': [user.id],
         'created_by': user.id,
-        'status': 'active'
     })
 
     await update.message.reply_text(
@@ -197,14 +183,108 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def join(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # if in group chat and tournament exists for group chat
     # add user to participants
+    chat = update.effective_chat
+    user = update.effective_user
+    chat_id = str(chat.id)
 
-    return
+    if chat.type not in ['group','supergroup']:
+        await update.message.reply_text(
+            "Must be in a group chat to join a tournament.",
+            reply_to_message_id=update.message.message_id
+        )
+        return
+
+    try:
+        response = tournaments_table.get_item(Key={'chat_id':chat_id})
+        item = response.get('Item')
+        if not item:
+            await update.message.reply_text(
+                "No active tournament found for this group chat. Use /createtournament to create one.",
+                reply_to_message_id=update.message.message_id
+            )
+            return
+
+        participants = item['participants']
+
+        if user.id in participants:
+            await update.message.reply_text(
+                f"{user.first_name} is already in this tournament.",
+                reply_to_message_id=update.message.message_id
+            )
+            return
+
+        participants.append(user.id)
+
+        tournaments_table.update_item(
+            Key={'chat_id':chat_id},
+            UpdateExpression="SET participants = :p",
+            ExpressionAttributeValues={':p':participants}
+        )
+
+        await update.message.reply_text(
+            f"{user.first_name} has joined the tournament! 🎉",
+            reply_to_message_id=update.message.message_id
+        )
+
+    except Exception as e:
+        logging.ERROR(f"Error adding user {user.id} to tournament for chat {chat_id}: {e}")
+        await update.message.reply_text(
+            "⚠️ An error occurred while trying to join the tournament.",
+            reply_to_message_id=update.message.message_id
+        )
 
 async def leave(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # if in group chat and tournament exists for group chat
     # remove user from participants
+    chat = update.effective_chat
+    user = update.effective_user
+    chat_id = str(chat.id)
 
-    return
+    if chat.type not in ['group','supergroup']:
+        await update.message.reply_text(
+            "Must be in a group chat to leave a tournament.",
+            reply_to_message_id=update.message.message_id
+        )
+        return
+
+    try:
+        response = tournaments_table.get_item(Key={'chat_id':chat_id})
+        item = response.get('Item')
+        if not item:
+            await update.message.reply_text(
+                "No active tournament found for this group chat. Use /createtournament to create one.",
+                reply_to_message_id=update.message.message_id
+            )
+            return
+
+        participants = item['participants']
+
+        if user.id not in participants:
+            await update.message.reply_text(
+                f"{user.first_name} is already not in this tournament.",
+                reply_to_message_id=update.message.message_id
+            )
+            return
+
+        participants.remove(user.id)
+
+        tournaments_table.update_item(
+            Key={'chat_id':chat_id},
+            UpdateExpression="SET participants = :p",
+            ExpressionAttributeValues={':p':participants}
+        )
+
+        await update.message.reply_text(
+            f"{user.first_name} has left the tournament!",
+            reply_to_message_id=update.message.message_id
+        )
+
+    except Exception as e:
+        logging.ERROR(f"Error removing user {user.id} from tournament for chat {chat_id}: {e}")
+        await update.message.reply_text(
+            "⚠️ An error occurred while trying to leave the tournament.",
+            reply_to_message_id=update.message.message_id
+        )
 
 async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # if in group chat and tournament exists for group chat
@@ -219,6 +299,8 @@ def main():
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("play",play))
+    application.add_handler(CommandHandler("join",join))
+    application.add_handler(CommandHandler("leave",leave))
     application.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp_data))
     # application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
