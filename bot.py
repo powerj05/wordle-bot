@@ -100,9 +100,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logging.info(f"Bot: {response}")
     await update.message.reply_text(response)
 
+# Tournament functionality
+# Create tournament (conv. handler)
 ASK_START_DATE, ASK_DAYS = range(2)
-
-# Entry point: ask for start date
 async def start_create_tournament(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logging.info(f"Entering start_create_tournament")
     chat = update.effective_chat
@@ -118,7 +118,6 @@ async def start_create_tournament(update: Update, context: ContextTypes.DEFAULT_
     )
     return ASK_START_DATE
 
-# Handle start date input
 async def receive_start_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logging.info(f"receive_start_date triggered with input: {update.message.text}")
     text = update.message.text.strip()
@@ -141,7 +140,6 @@ async def receive_start_date(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text("Invalid date format. Use YYYY-MM-DD.")
         return ASK_START_DATE
 
-# Handle number of days input
 async def receive_days(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.strip()
     logging.info(f"receive_start_date called with input: {text}")
@@ -175,14 +173,13 @@ async def receive_days(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     return ConversationHandler.END
 
-# Cancel fallback
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Tournament creation cancelled.")
     return ConversationHandler.END
 
+# Other methods (self-explanatory)
 async def join(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # if in group chat and tournament exists for group chat
-    # add user to participants
+    # Add user to tournament for group chat
     chat = update.effective_chat
     user = update.effective_user
     chat_id = str(chat.id)
@@ -234,8 +231,7 @@ async def join(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 async def leave(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # if in group chat and tournament exists for group chat
-    # remove user from participants
+    # remove user from tournament for group chat
     chat = update.effective_chat
     user = update.effective_user
     chat_id = str(chat.id)
@@ -287,6 +283,7 @@ async def leave(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # check leaderboard for tournament
     chat = update.effective_chat
     chat_id = str(chat.id)
 
@@ -371,7 +368,8 @@ async def get_display_name(bot, chat_id, user_id):
             return f"@{member.user.username}"
         else:
             return member.user.first_name
-    except:
+    except Exception as e:
+        logging.error(f"Error fetching user display name: {e}")
         return f"User {user_id}"
 
 def main():
