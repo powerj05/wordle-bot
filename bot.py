@@ -316,27 +316,28 @@ async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         for p in participants:
-            disp_name = await get_display_name(context.bot,chat_id,p)
+            user_id = int(p)
+            disp_name = await get_display_name(context.bot,chat_id,user_id)
 
             # Fetch today's score
-            logging.info(f"Fetching today's score for user {p}.")
+            logging.info(f"Fetching today's score for user {user_id}.")
             td_score_resp = scores_table.query(
-                KeyConditionExpression=Key('user_id').eq(str(p)) &
+                KeyConditionExpression=Key('user_id').eq(str(user_id)) &
                                            Key('date').eq(date.today().isoformat()),
             )
             td_score_item = td_score_resp.get('Items', [])
             td_score = td_score_item[0].get('score') if td_score_item else 'NYP'
-            logging.info(f"user {p}'s score for today: {td_score}")
+            logging.info(f"user {user_id}'s score for today: {td_score}")
 
             total_score=0
             days_played = 0
 
-            logging.info(f"Fetching all scores for user {p}.")
+            logging.info(f"Fetching all scores for user {user_id}.")
             score_resp = scores_table.query(
             KeyConditionExpression=Key('user_id').eq(str(p)) &
                                     Key('date').between(start_date, end_date)
             )
-            logging.info(f"Fetched scores for user {p}")
+            logging.info(f"Fetched scores for user {user_id}")
             for s in score_resp.get('Items',[]):
                 score = s.get('score')
                 days_played += 1
